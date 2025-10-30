@@ -116,3 +116,9 @@ def update_user_phone(user_id, user_name, payload, headers):
     except requests.exceptions.RequestException as e:
         logger.error(f"Error updating phone numbers for {user_name} (ID: {user_id}): {str(e)}")
         raise
+
+if __name__ == "__main__":
+    try:
+        get_users(site_id)
+    except Exception as e:
+        logger.error(f"Script failed: {e}")
