@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 """Script to add country codes to UK phone numbers in Halo user records. Numbers starting with '07' will be updated to '+44'."""
 
-site_id = 12345  # Replace with actual site ID
+site_id = 865  # Replace with actual site ID
 
 def retrieve_secrets():
     """Retrieve secrets from AWS Secrets Manager."""
@@ -54,26 +54,38 @@ def get_users(site_id):
         "count": 500
     }
 
+     # Add debug logging for request details
+    # logger.info(f"Making request to: {url}")
+    # logger.info(f"With parameters: {params}")
+
     try:
         response = requests.get(url, headers=headers, params=params)
+        # logger.info(f"Raw response: {response.text}")
         response.raise_for_status()
+    
 
         if response.status_code == 200:
-            users = response.json()
-            logger.info("Successfully received users")
+            raw_data = response.json()
+            users = raw_data.get('users', [])
+            site_name = users[0].get('site_name', 'Unknown Site') if users else 'Unknown Site'
+            logger.info(f"Successfully received {len(users)} users from site: {site_name}")
             
             for user in users:
-                user_name = user.get('Name', 'Unknown User')
+                user_name = user.get('name', 'Unknown User')
                 phone_fields = {
                     'phonenumber': user.get('phonenumber', ''),
                     'mobilenumber': user.get('mobilenumber', ''),
                     'mobilenumber2': user.get('mobilenumber2', '')
                 }
                 
+                # Log each user's phone numbers
+                logger.info(f"User {user_name} phone numbers: {phone_fields}")
+
                 updates = {}
                 for field, number in phone_fields.items():
                     if number and number.startswith('07'):
                         updates[field] = '+44' + number[2:]
+                        logger.info(f"Prepared update for {user_name}: {field} from {number} to {updates[field]}")
                 
                 if updates:
                     payload = [{
@@ -95,7 +107,7 @@ def get_users(site_id):
 
 def update_user_phone(user_id, user_name, payload, headers):
     """Update user's phone numbers in Halo."""
-    url = f"https://synergy.halopsa.com/api/Users/{user_id}"
+    url = f"https://synergy.halopsa.com/api/Users"
     
     try:
         logger.info(f"Updating phone numbers for {user_name}")
@@ -108,10 +120,10 @@ def update_user_phone(user_id, user_name, payload, headers):
         
         response.raise_for_status()
         
-        if response.status_code == 200:
+        if response.status_code in [200, 201]:
             logger.info(f"Successfully updated phone numbers for {user_name} (ID: {user_id})")
         else:
-            logger.error(f"Failed to update phone numbers for {user_name} (ID: {user_id}): {response.status_code} - {response.text}")
+            logger.error(f"Failed to update phone numbers for {user_name} (ID: {user_id}): {response.status_code}")
     
     except requests.exceptions.RequestException as e:
         logger.error(f"Error updating phone numbers for {user_name} (ID: {user_id}): {str(e)}")
