@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 """Script to add country codes to UK phone numbers in Halo user records. Numbers starting with '07' will be updated to '+44'."""
 
-site_id = 865  # Replace with actual site ID
+site_id = 496  # Replace with actual site ID
 
 def retrieve_secrets():
     """Retrieve secrets from AWS Secrets Manager."""
@@ -54,7 +54,7 @@ def get_users(site_id):
         "count": 500
     }
 
-     # Add debug logging for request details
+    # Add debug logging for request details
     # logger.info(f"Making request to: {url}")
     # logger.info(f"With parameters: {params}")
 
